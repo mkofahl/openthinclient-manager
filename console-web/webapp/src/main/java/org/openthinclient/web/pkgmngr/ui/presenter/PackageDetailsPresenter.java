@@ -1,13 +1,16 @@
 package org.openthinclient.web.pkgmngr.ui.presenter;
 
+import ch.qos.cal10n.MessageConveyor;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.ComponentContainer;
+import com.vaadin.ui.UI;
 import org.openthinclient.pkgmgr.PackageManager;
 import org.openthinclient.pkgmgr.db.Package;
 import org.openthinclient.pkgmgr.op.PackageManagerOperation;
 import org.openthinclient.pkgmgr.op.PackageManagerOperationReport;
-import org.openthinclient.pkgmgr.progress.ListenableProgressFuture;
+import org.openthinclient.progress.ListenableProgressFuture;
+import org.openthinclient.web.i18n.ConsoleWebMessages;
 import org.openthinclient.web.pkgmngr.ui.InstallationPlanSummaryDialog;
 import org.openthinclient.web.pkgmngr.ui.view.AbstractPackageItem;
 import org.openthinclient.web.progress.ProgressReceiverDialog;
@@ -23,10 +26,12 @@ public class PackageDetailsPresenter {
 
     private final View view;
     private final PackageManager packageManager;
+    private final MessageConveyor mc;
 
     public PackageDetailsPresenter(View view, PackageManager packageManager) {
         this.view = view;
         this.packageManager = packageManager;
+        mc = new MessageConveyor(UI.getCurrent().getLocale());
     }
 
     public void setPackage(org.openthinclient.pkgmgr.db.Package otcPackage) {
@@ -69,12 +74,12 @@ public class PackageDetailsPresenter {
             actionBar.removeAllComponents();
 
             if (packageManager.isInstallable(otcPackage)) {
-                actionBar.addComponent(new MButton("Install").withIcon(VaadinIcons.DOWNLOAD).withListener((Button.ClickListener) e -> {
+                actionBar.addComponent(new MButton(mc.getMessage(ConsoleWebMessages.UI_PACKAGEMANAGER_BUTTON_INSTALL_CAPTION)).withIcon(VaadinIcons.DOWNLOAD).withListener((Button.ClickListener) e -> {
                     doInstallPackage(otcPackage);
                 }));
             }
             if (packageManager.isInstalled(otcPackage)) {
-                actionBar.addComponent(new MButton("Uninstall").withIcon(VaadinIcons.TRASH).withListener((Button.ClickListener) e -> {
+                actionBar.addComponent(new MButton(mc.getMessage(ConsoleWebMessages.UI_PACKAGEMANAGER_BUTTON_UNINSTALL_CAPTION)).withIcon(VaadinIcons.TRASH).withListener((Button.ClickListener) e -> {
                     doUninstallPackage(otcPackage);
                 }));
             }
@@ -99,6 +104,8 @@ public class PackageDetailsPresenter {
         final ProgressReceiverDialog dialog = new ProgressReceiverDialog(install ? "Installation..." : "Uninstallation...");
         final ListenableProgressFuture<PackageManagerOperationReport> future = packageManager.execute(op);
         dialog.watch(future);
+
+        view.hide();
 
         dialog.open(true);
     }

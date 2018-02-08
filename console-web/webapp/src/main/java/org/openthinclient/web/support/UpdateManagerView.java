@@ -11,8 +11,10 @@ import com.vaadin.ui.themes.ValoTheme;
 import org.openthinclient.api.proc.RuntimeProcessExecutor;
 import org.openthinclient.api.versioncheck.AvailableVersionChecker;
 import org.openthinclient.api.versioncheck.UpdateDescriptor;
+import org.openthinclient.manager.util.http.DownloadManager;
 import org.openthinclient.pkgmgr.PackageManagerConfiguration;
 import org.openthinclient.pkgmgr.db.Version;
+import org.openthinclient.progress.NoopProgressReceiver;
 import org.openthinclient.service.common.home.ManagerHome;
 import org.openthinclient.web.component.NotificationDialog;
 import org.openthinclient.web.event.DashboardEventBus;
@@ -41,6 +43,9 @@ public class UpdateManagerView extends Panel implements View {
 
   @Autowired
   private ManagerHome managerHome;
+  @Autowired
+  private DownloadManager downloadManager;
+
   @Value("${application.version}")
   private String applicationVersion;
   @Value("${otc.application.version.update.location}")
@@ -111,9 +116,10 @@ public class UpdateManagerView extends Panel implements View {
 
         this.button = new Button(mc.getMessage(ConsoleWebMessages.UI_SUPPORT_CHECK_APPLICATION_VERSION_BUTTON));
         this.button.addClickListener(e -> {
-            AvailableVersionChecker avc = new AvailableVersionChecker(managerHome);
+            AvailableVersionChecker avc = new AvailableVersionChecker(managerHome, downloadManager);
             try {
-                UpdateDescriptor versionDescriptor = avc.getVersion(new URI(this.updateLocation));
+                // TODO add UI-ProgressReceiver
+                UpdateDescriptor versionDescriptor = avc.getVersion(new URI(this.updateLocation), new NoopProgressReceiver());
                 Version newVersion = Version.parse(versionDescriptor.getNewVersion());
                 Version currentVersion = Version.parse(applicationVersion);
 

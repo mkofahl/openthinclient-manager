@@ -24,16 +24,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.openthinclient.manager.util.http.DownloadManagerFactory;
+import org.openthinclient.manager.util.http.DownloadManager;
 import org.openthinclient.manager.util.http.config.NetworkConfiguration;
 import org.openthinclient.pkgmgr.connect.PackageListDownloader;
 import org.openthinclient.pkgmgr.db.Package;
 import org.openthinclient.pkgmgr.db.PackageManagerDatabase;
 import org.openthinclient.pkgmgr.db.Source;
 import org.openthinclient.pkgmgr.op.PackageListUpdateReport;
-import org.openthinclient.pkgmgr.progress.ListenableProgressFuture;
-import org.openthinclient.pkgmgr.progress.ProgressReceiver;
-import org.openthinclient.pkgmgr.progress.ProgressTask;
+import org.openthinclient.progress.ListenableProgressFuture;
+import org.openthinclient.progress.ProgressReceiver;
+import org.openthinclient.progress.ProgressTask;
 import org.openthinclient.util.dpkg.LocalPackageList;
 import org.openthinclient.util.dpkg.PackagesListParser;
 import org.slf4j.Logger;
@@ -46,13 +46,15 @@ public class UpdateDatabase implements ProgressTask<PackageListUpdateReport> {
     private final SourcesList sourcesList;
     private final PackageManagerDatabase db;
     private final PackageManagerDirectoryStructure directoryStructure;
+    private final DownloadManager downloadManager;
     
 
-    public UpdateDatabase(PackageManagerConfiguration configuration, SourcesList sourcesList, PackageManagerDatabase db) {
+    public UpdateDatabase(PackageManagerConfiguration configuration, SourcesList sourcesList, PackageManagerDatabase db, DownloadManager downloadManager) {
         this.configuration = configuration;
         this.sourcesList = sourcesList;
         this.db = db;
         this.directoryStructure = new PackageManagerDirectoryStructureImpl(configuration);
+        this.downloadManager = downloadManager;
     }
 
    private static URL createPackageChangeLogURL(Package pkg) {
@@ -73,7 +75,7 @@ public class UpdateDatabase implements ProgressTask<PackageListUpdateReport> {
         try {
             final Path changelogFile = directoryStructure.changelogFileLocation(source, pkg);
             Files.createDirectories(changelogFile.getParent());
-            DownloadManagerFactory.create(proxyConfiguration).downloadTo(createPackageChangeLogURL(pkg), changelogFile.toFile());
+            downloadManager.downloadTo(createPackageChangeLogURL(pkg), changelogFile.toFile());
             return true;
         } catch (final Exception e) {
             if (null != taskSummary) {
@@ -218,7 +220,7 @@ public class UpdateDatabase implements ProgressTask<PackageListUpdateReport> {
     @Override
     public PackageListUpdateReport execute(ProgressReceiver progressReceiver) throws Exception {
 
-        final PackageListDownloader packageListDownloader = new PackageListDownloader(configuration, DownloadManagerFactory.create(configuration.getProxyConfiguration()));
+        final PackageListDownloader packageListDownloader = new PackageListDownloader(configuration, downloadManager);
 
         final PackageListUpdateReport report = new PackageListUpdateReport();
 
@@ -231,7 +233,7 @@ public class UpdateDatabase implements ProgressTask<PackageListUpdateReport> {
 
             updateProgress(progressReceiver, source);
 
-            final LocalPackageList localPackageList = packageListDownloader.download(source);
+            final LocalPackageList localPackageList = packageListDownloader.download(source, progressReceiver);
             List<Package> parsePackagesList = parsePackagesList(localPackageList).collect(Collectors.toList());
             parsePackagesList.forEach((pkg) -> processPackage(source, pkg, report));
             

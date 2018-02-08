@@ -10,7 +10,7 @@ import org.openthinclient.pkgmgr.PackageChecksumVerificationFailedException;
 import org.openthinclient.pkgmgr.db.Package;
 import org.openthinclient.pkgmgr.db.Source;
 import org.openthinclient.pkgmgr.db.Version;
-import org.openthinclient.pkgmgr.progress.NoopProgressReceiver;
+import org.openthinclient.progress.NoopProgressReceiver;
 import org.openthinclient.util.dpkg.DefaultLocalPackageRepository;
 
 import java.nio.file.Files;
@@ -38,7 +38,7 @@ public class PackageOperationDownloadTest {
     }
 
     private HttpClientDownloadManager createDownloadManager() {
-        return new HttpClientDownloadManager(new NetworkConfiguration.ProxyConfiguration());
+        return new HttpClientDownloadManager(new NetworkConfiguration.ProxyConfiguration(), PackageOperationDownloadTest.class.getName());
     }
 
     private Path createTestDirectory(String testName) {

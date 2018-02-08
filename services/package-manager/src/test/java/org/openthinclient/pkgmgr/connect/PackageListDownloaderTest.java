@@ -3,12 +3,13 @@ package org.openthinclient.pkgmgr.connect;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.openthinclient.manager.util.http.DownloadManagerFactory;
+import org.openthinclient.manager.util.http.DownloadManager;
 import org.openthinclient.pkgmgr.DebianTestRepositoryServer;
 import org.openthinclient.pkgmgr.PackageManagerConfiguration;
 import org.openthinclient.pkgmgr.SimpleTargetDirectoryPackageManagerConfiguration;
 import org.openthinclient.pkgmgr.SourcesList;
 import org.openthinclient.pkgmgr.db.Source;
+import org.openthinclient.progress.NoopProgressReceiver;
 import org.openthinclient.util.dpkg.LocalPackageList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -24,11 +25,13 @@ import static org.junit.Assert.assertTrue;
 @ContextConfiguration(classes = PackageListDownloaderTest.SearchForServerFileTestConfiguration.class)
 public class PackageListDownloaderTest {
 
-    @ClassRule
-    public static final DebianTestRepositoryServer testRepositoryServer = new DebianTestRepositoryServer();
+  @ClassRule
+  public static final DebianTestRepositoryServer testRepositoryServer = new DebianTestRepositoryServer();
 
   @Autowired
   PackageManagerConfiguration packageManagerConfiguration;
+  @Autowired
+  DownloadManager downloadManager;
 
   @Test
   public void testCheckForNewUpdatedFiles() throws Exception {
@@ -39,9 +42,9 @@ public class PackageListDownloaderTest {
     source.setEnabled(true);
     sourcesList.getSources().add(source);
 
-    final PackageListDownloader packageListDownloader = new PackageListDownloader(packageManagerConfiguration, DownloadManagerFactory.create(packageManagerConfiguration.getProxyConfiguration()));
+    final PackageListDownloader packageListDownloader = new PackageListDownloader(packageManagerConfiguration, downloadManager);
 
-    final LocalPackageList result = packageListDownloader.download(source);
+    final LocalPackageList result = packageListDownloader.download(source, new NoopProgressReceiver());
 
     assertNotNull(result);
     assertEquals(testRepositoryServer.getServerUrl(), result.getSource().getUrl());
