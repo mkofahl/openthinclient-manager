@@ -114,4 +114,7 @@ derby.log
 
 
 # Vaadin generated content
-.designer
+.designer/
+
+**/VAADIN/themes/**/addons.scss
+**/VAADIN/themes/**/styles.css
